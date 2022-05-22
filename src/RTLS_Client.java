@@ -111,9 +111,6 @@ public class RTLS_Client extends JFrame implements RTLS_Variable {
 		}
 	}
 
-	public JMenu getMenu() {
-		return Menu;
-	}
 	public ObjectInputStream getOis() {
 		return ois;
 	}
