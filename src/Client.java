@@ -45,15 +45,19 @@ public class Client implements RTLS_Variable {
 	}
 
 	public void moveClient(int moveX,int moveY) {
-		x += moveX;
-		y += moveY;
-		location.setLocation(x, y);
-		state = state_check(x, y);
-		if(state == danger) {
-			location.setForeground(Color.RED);// state가 danger일때 빨간색으로 교체
-		}
-		else {
-			location.setForeground(Color.BLACK);// 앞에 if문을 모두 지나치면 안전하므로 검은색으로 교체
+		int new_x = x + moveX;
+		int new_y = y + moveY;
+		if(0<new_x&&new_x<470&&0<new_y&&new_y<270){
+			x = new_x;
+			y = new_y;
+			location.setLocation(x, y);
+			state = state_check(x, y);
+			if(state == danger) {
+				location.setForeground(Color.RED);// state가 danger일때 빨간색으로 교체
+			}
+			else {
+				location.setForeground(Color.BLACK);// 앞에 if문을 모두 지나치면 안전하므로 검은색으로 교체
+			}
 		}
 	}
 	// 클라이언트의 상태를 체크하는 함수 (danger room : room 1,room 4, room 6)

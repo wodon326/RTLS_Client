@@ -1,6 +1,7 @@
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.nio.ByteBuffer;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JTextArea;
@@ -13,7 +14,7 @@ public class Receiver extends Thread implements RTLS_Variable {
 	private ObjectOutputStream oos;
 	private RTLS_Client frame;
 
-	public Receiver(RTLS_Client frame, Client client,JTextArea [] textArea) throws IOException {
+	public Receiver(RTLS_Client frame, Client client,JTextArea [] textArea){
 		setName("Receiver");
 		this.client = client;
 		this.textArea = textArea;
@@ -29,6 +30,12 @@ public class Receiver extends Thread implements RTLS_Variable {
 			while (true) {
 				buf = (byte[]) ois.readObject(); // 데이터 받기 (데이터를 받을 때까지 대기)
 
+				int id;
+				byte state;
+				int x;
+				int y;
+				byte[] byte_recode = new byte[10];
+				byte[] byte_int = new byte[4];
 				int sender = 0;
 				int receiver = 0;
 				byte[] msg_byte = null;
@@ -50,6 +57,34 @@ public class Receiver extends Thread implements RTLS_Variable {
 							int ClientID = (int) buf[2];
 							frame.setClientID(ClientID);
 							client.setID((byte)ClientID);
+							break;
+						case CMD_SOS:
+							System.arraycopy(buf, 2, byte_recode, 0, 10);
+							id = (int) byte_recode[0];
+							state = byte_recode[1];
+							System.arraycopy(byte_recode, 2, byte_int, 0, 4);
+							x = ByteBuffer.wrap(byte_int).getInt();
+							System.arraycopy(byte_recode, 6, byte_int, 0, 4);
+							y = ByteBuffer.wrap(byte_int).getInt();
+							frame.ShowSOS(id,state,x,y);
+							break;
+						case CMD_RESCUE:
+							System.arraycopy(buf, 2, byte_recode, 0, 10);
+							id = (int) byte_recode[0];
+							state = byte_recode[1];
+							System.arraycopy(byte_recode, 2, byte_int, 0, 4);
+							x = ByteBuffer.wrap(byte_int).getInt();
+							System.arraycopy(byte_recode, 6, byte_int, 0, 4);
+							y = ByteBuffer.wrap(byte_int).getInt();
+							frame.Rescue_Request(id,state,x,y);
+							break;
+						case CMD_LOCATION_ALERTS:
+							System.arraycopy(buf, 2, byte_recode, 0, 8);
+							System.arraycopy(byte_recode, 0, byte_int, 0, 4);
+							x = ByteBuffer.wrap(byte_int).getInt();
+							System.arraycopy(byte_recode, 4, byte_int, 0, 4);
+							y = ByteBuffer.wrap(byte_int).getInt();
+							frame.danger_alerts(x,y);
 							break;
 						default:
 							break;

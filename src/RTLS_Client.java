@@ -4,8 +4,10 @@ import java.awt.*;
 import javax.swing.border.EmptyBorder;
 import java.io.*;
 import java.net.*;
+import java.nio.ByteBuffer;
 
 public class RTLS_Client extends JFrame implements RTLS_Variable {
+	private byte ID;
 	private int FLYING_UNIT = 10;// 키보드 한번 클릭할때 움직이는 크기
 	private JPanel contentPane;
 	private JMenu Menu;
@@ -20,7 +22,23 @@ public class RTLS_Client extends JFrame implements RTLS_Variable {
 		ImageIcon icon;// 배경
 		icon = new ImageIcon("RTLS map.png");
 		textArea = new JTextArea[4];
-		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		this.addWindowListener(  new WindowAdapter() {
+			public void windowClosing(WindowEvent e) {
+
+				System.out.println(ID + "가 나갔습니다.");
+				byte[] buf_Exit = new byte[4];
+				buf_Exit[0] = STX;
+				buf_Exit[1] = CMD_EXIT;
+				buf_Exit[2] = ID;
+				buf_Exit[3] = ETX;
+				try {
+					oos.writeObject(buf_Exit);
+				} catch (IOException ex) {
+					throw new RuntimeException(ex);
+				}
+				System.exit(0);
+			}
+		});
 		setBounds(100, 100, 500, 350);
 		JMenuBar menuBar = new JMenuBar();
 		setJMenuBar(menuBar);
@@ -58,8 +76,6 @@ public class RTLS_Client extends JFrame implements RTLS_Variable {
 			Menu.add(NewMenuItem);
 		}
 		JMenuItem My_State_and_Location = new JMenuItem("Check My State and Location");
-
-		// 메뉴 클릭했을때 데이터베이스에서 채팅기록을 가져오고 채팅할수있는 Client_Chat을 띄움
 		My_State_and_Location.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				String State;
@@ -72,6 +88,28 @@ public class RTLS_Client extends JFrame implements RTLS_Variable {
 			}
 		});
 		menuBar.add(My_State_and_Location);
+
+		JMenuItem SOS_Request = new JMenuItem("SOS Request");
+		SOS_Request.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				byte[] buf_SOS;
+				byte[] data_RTLS = new byte[10];
+				byte[] int_byte = new byte[4];
+				data_RTLS[0] = client.getID();
+				data_RTLS[1] = client.getState();
+				int_byte = intToBytes(client.getX());
+				System.arraycopy(int_byte, 0, data_RTLS, 2, 4);
+				int_byte = intToBytes(client.getY());
+				System.arraycopy(int_byte, 0, data_RTLS, 6, 4);
+				buf_SOS = makepacket(CMD_SOS, data_RTLS);
+				try {
+					oos.writeObject(buf_SOS);
+				} catch (IOException ex) {
+					throw new RuntimeException(ex);
+				}
+			}
+		});
+		menuBar.add(SOS_Request);
 
 		contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
 		setContentPane(contentPane);
@@ -122,6 +160,35 @@ public class RTLS_Client extends JFrame implements RTLS_Variable {
 	}
 	public void setClientID(int ID) {
 		setTitle("ID : " + ID);
+		this.ID = (byte) ID;
+	}
+	public void ShowSOS(int ID,int State, int X, int Y){
+		String State_str;
+		if(State==danger)
+			State_str = "Danger";
+		else
+			State_str = "Normal";
+		String message = "Client#"+ID+"가 SOS 요청을 하였습니다.\n"+"X : "+X+" Y : "+Y+ " State : "+State_str;
+		JOptionPane.showMessageDialog(null, message);
+	}
+	public void Rescue_Request(int ID,int State, int X, int Y){
+		String State_str;
+		if(State==danger)
+			State_str = "Danger";
+		else
+			State_str = "Normal";
+		String message = "옵저버가 Client#"+ID+"의 구조를 요청하였습니다.\n"+"X : "+X+" Y : "+Y+ " State : "+State_str;
+		JOptionPane.showMessageDialog(null, message);
+	}
+	public void danger_alerts(int X, int Y){
+		JLabel alerts = new JLabel("X");
+		alerts.setBounds(X, Y, 57, 15);
+		alerts.setForeground(Color.RED);
+
+		contentPane.add(alerts);
+		repaint();
+		String message = "옵저버가 해당 위치를 경고하였습니다.\n"+"X : "+X+" Y : "+Y;
+		JOptionPane.showMessageDialog(null, message);
 	}
 	public void setSocket(Socket socket) throws IOException {
 		this.socket = socket;
@@ -151,5 +218,20 @@ public class RTLS_Client extends JFrame implements RTLS_Variable {
 		RTLS thread_rtls = new RTLS(frame.getOos(),client);
 		thread_rtls.start();
 	}
+	// 패킷 만드는 함수
+	public static byte[] makepacket(byte cmd, byte[] data) {
+		byte[] pack = new byte[data.length + 3];
+		pack[0] = STX;
+		pack[1] = cmd;
+		System.arraycopy(data, 0, pack, 2, data.length);
+		pack[pack.length - 1] = ETX;
+		return pack;
+	}
 
+	// int -> byte[] 함수
+	public static byte[] intToBytes(final int i) {
+		ByteBuffer bytebuffer = ByteBuffer.allocate(4);
+		bytebuffer.putInt(i);
+		return bytebuffer.array();
+	}
 }
