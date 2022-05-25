@@ -163,6 +163,11 @@ public class RTLS_Client extends JFrame implements RTLS_Variable {
 		this.ID = (byte) ID;
 	}
 	public void ShowSOS(int ID,int State, int X, int Y){
+		JLabel alerts = new JLabel("SOS");
+		alerts.setBounds(X, Y, 57, 15);
+		alerts.setForeground(Color.RED);
+		contentPane.add(alerts);
+		repaint();
 		String State_str;
 		if(State==danger)
 			State_str = "Danger";
@@ -172,6 +177,11 @@ public class RTLS_Client extends JFrame implements RTLS_Variable {
 		JOptionPane.showMessageDialog(null, message);
 	}
 	public void Rescue_Request(int ID,int State, int X, int Y){
+		JLabel alerts = new JLabel("SOS");
+		alerts.setBounds(X, Y, 57, 15);
+		alerts.setForeground(Color.RED);
+		contentPane.add(alerts);
+		repaint();
 		String State_str;
 		if(State==danger)
 			State_str = "Danger";
@@ -184,7 +194,6 @@ public class RTLS_Client extends JFrame implements RTLS_Variable {
 		JLabel alerts = new JLabel("X");
 		alerts.setBounds(X, Y, 57, 15);
 		alerts.setForeground(Color.RED);
-
 		contentPane.add(alerts);
 		repaint();
 		String message = "옵저버가 해당 위치를 경고하였습니다.\n"+"X : "+X+" Y : "+Y;
